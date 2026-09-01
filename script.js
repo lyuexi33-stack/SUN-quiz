@@ -58,6 +58,7 @@ function saveRecord(id, unit, data) {
 }
 
 /* ================= 登录 ================= */
+$('btn-login').addEventListener
 $('btn-login').addEventListener('click', function () {
   var id = $('student-id').value.trim();
   var name = $('student-name').value.trim();

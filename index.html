@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -6,12 +7,17 @@
   <title>答题系统</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- 内联样式：确保即使外部CSS未加载，视图切换也能正常工作 -->
+  <style>
+    .view { display: none !important; }
+    .view.active { display: block !important; }
+  </style>
 </head>
 <body>
   <div id="app">
 
-    <!-- 登录 -->
-    <section id="view-login" class="view">
+    <!-- 登录界面（初始可见） -->
+    <section id="view-login" class="view active">
       <div class="login-wrap">
         <div class="logo-mark">答</div>
         <h1 class="login-title">答题系统</h1>
@@ -25,8 +31,8 @@
       </div>
     </section>
 
-    <!-- 单元列表 -->
-    <section id="view-units" class="view">
+    <!-- 单元列表界面（初始隐藏） -->
+    <section id="view-units" class="view" style="display:none;">
       <header class="topbar">
         <div class="brand"><span class="logo-mark small">答</span>答题系统</div>
         <div class="topbar-right">
@@ -44,8 +50,8 @@
       </main>
     </section>
 
-    <!-- 答题 -->
-    <section id="view-quiz" class="view">
+    <!-- 答题界面（初始隐藏） -->
+    <section id="view-quiz" class="view" style="display:none;">
       <header class="topbar">
         <button id="btn-back" class="btn btn-ghost">返回</button>
         <div class="quiz-title" id="quiz-title"></div>
@@ -61,8 +67,8 @@
       </main>
     </section>
 
-    <!-- 题库管理 -->
-    <section id="view-admin" class="view">
+    <!-- 题库管理界面（初始隐藏） -->
+    <section id="view-admin" class="view" style="display:none;">
       <header class="topbar">
         <div class="brand">题库管理</div>
         <button id="btn-admin-back" class="btn btn-ghost">返回</button>

@@ -1,8 +1,9 @@
+
 /* ================= 答题系统 逻辑 ================= */
 var UNITS = 8;                    // 单元总数，可改
 var UNIT_NAMES = buildUnitNames(UNITS);
 var LETTERS = ['A', 'B', 'C', 'D'];
-var ADMIN_PASSWORD = 'SUN2026'; // 管理密码，可改
+var ADMIN_PASSWORD = 'admin2026'; // 管理密码，可改
 
 var user = null;       // {id, name}
 var unit = 0;          // 当前单元
@@ -22,10 +23,19 @@ function buildUnitNames(n) {
   return arr;
 }
 
-/* ---------- 视图切换 ---------- */
+/* ---------- 视图切换（核心：确保登录和单元选择完全分离）---------- */
 function showView(id) {
-  document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('active'); });
-  document.getElementById(id).classList.add('active');
+  // 先隐藏所有视图
+  document.querySelectorAll('.view').forEach(function (v) {
+    v.classList.remove('active');
+    v.style.display = 'none';
+  });
+  // 再显示目标视图
+  var target = document.getElementById(id);
+  target.classList.add('active');
+  target.style.display = 'block';
+  // 滚动到顶部
+  window.scrollTo(0, 0);
 }
 
 function $(id) { return document.getElementById(id); }
@@ -58,7 +68,6 @@ function saveRecord(id, unit, data) {
 }
 
 /* ================= 登录 ================= */
-
 $('btn-login').addEventListener('click', function () {
   var id = $('student-id').value.trim();
   var name = $('student-name').value.trim();
@@ -66,18 +75,22 @@ $('btn-login').addEventListener('click', function () {
   user = { id: id, name: name };
   localStorage.setItem('sun_student', JSON.stringify(user));
   $('login-error').textContent = '';
+  // 点击进入系统 → 跳转到单元选择界面
   enterUnits();
 });
 
 $('btn-logout').addEventListener('click', function () {
   localStorage.removeItem('sun_student');
   user = null;
-  $('student-id').value = ''; $('student-name').value = '';
+  $('student-id').value = '';
+  $('student-name').value = '';
+  // 退出 → 返回登录界面
   showView('view-login');
 });
 
 /* ================= 单元列表 ================= */
 function enterUnits() {
+  // 显示单元选择界面（登录界面自动隐藏）
   showView('view-units');
   $('display-name').textContent = user.name;
   renderUnits();
@@ -131,6 +144,7 @@ function openUnit(u) {
   qIndex = 0;
   answers = [];
   submitted = false;
+  // 显示答题界面（单元选择界面自动隐藏）
   showView('view-quiz');
   $('quiz-title').textContent = UNIT_NAMES[u - 1];
   $('quiz-progress').textContent = '加载中…';
@@ -241,7 +255,7 @@ function renderResult(correct, total, score) {
       if (q.answer.indexOf(L) >= 0) cls += ' correct-opt';
       else if (answers[i].indexOf(L) >= 0) cls += ' wrong-opt';
       opts += '<div class="' + cls + '">' + L + '．' + escapeHtml(text) +
-        (q.answer.indexOf(L) >= 0 ? '　✓ 正确答案' : (answers[i].indexOf(L) >= 0 ? '　✗ 你的错选' : '')) + '</div>';
+        (q.answer.indexOf(L) >= 0 ? '  ✓ 正确答案' : (answers[i].indexOf(L) >= 0 ? '  ✗ 你的错选' : '')) + '</div>';
     });
     html +=
       '<div class="question-card review-item ' + (ok ? 'correct' : 'wrong') + '">' +
@@ -249,8 +263,8 @@ function renderResult(correct, total, score) {
       '<span class="q-text">' + escapeHtml(q.q) + '</span>' +
       '<span class="q-type q-type-' + ((q.answer || '').length > 1 ? 'multi' : 'single') + '">' + type + '</span></div>' +
       '<div class="review-status">' + (ok ? '<span class="ok">✓ 回答正确</span>' : '<span class="no">✗ 回答错误</span>') +
-      '　<span class="review-ans"><span class="label">你的答案：</span>' +
-      '<span class="your-a' + (ok ? '' : ' wrong') + '">' + (answers[i] || '未作答') + '</span>　' +
+      '  <span class="review-ans"><span class="label">你的答案：</span>' +
+      '<span class="your-a' + (ok ? '' : ' wrong') + '">' + (answers[i] || '未作答') + '</span>  ' +
       '<span class="label">正确答案：</span><span class="correct-a">' + q.answer + '</span></span></div>' +
       '<div class="review-options">' + opts + '</div>' +
       '</div>';
@@ -410,7 +424,7 @@ $('btn-download').addEventListener('click', function () {
 
 /* ================= 启动 ================= */
 (function init() {
-  var s = getStudent();
-  if (s) { user = s; enterUnits(); }
-  else { showView('view-login'); }
+  // 始终先显示登录界面，确保登录和单元选择完全分离
+  showView('view-login');
+  // 不再自动登录，用户必须手动点击"进入系统"
 })();

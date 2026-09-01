@@ -37,6 +37,7 @@
         <div class="brand"><span class="logo-mark small">答</span>答题系统</div>
         <div class="topbar-right">
           <span class="user">欢迎，<b id="display-name"></b></span>
+          <button id="btn-records" class="btn btn-outline">我的成绩记录</button>
           <button id="btn-logout" class="btn btn-ghost">退出</button>
         </div>
       </header>
@@ -46,6 +47,28 @@
         <div id="unit-grid" class="unit-grid"></div>
         <div class="admin-entry">
           <button id="btn-admin" class="btn btn-ghost">题库管理</button>
+        </div>
+      </main>
+    </section>
+
+    <!-- 我的成绩记录界面（初始隐藏） -->
+    <section id="view-records" class="view" style="display:none;">
+      <header class="topbar">
+        <button id="btn-records-back" class="btn btn-ghost">返回</button>
+        <div class="brand">我的成绩记录</div>
+      </header>
+      <main class="content content-narrow">
+        <div class="card">
+          <p class="card-title">答题人信息</p>
+          <div class="row">
+            <span class="label">学号：</span><span id="record-student-id"></span>
+            <span class="label" style="margin-left:16px;">姓名：</span><span id="record-student-name"></span>
+          </div>
+        </div>
+        <div class="card">
+          <p class="card-title">成绩明细</p>
+          <div id="records-table-wrap" class="table-wrap"></div>
+          <div id="records-empty" class="empty-tip" style="display:none;">暂无作答记录</div>
         </div>
       </main>
     </section>
@@ -82,8 +105,33 @@
             <button id="btn-admin-ok" class="btn btn-primary">进入</button>
           </div>
         </div>
-
         <div id="admin-body" style="display:none">
+          <!-- 答题记录查看 -->
+          <div class="card" id="admin-records-card">
+            <p class="card-title">答题记录查看</p>
+            <div class="row wrap">
+              <label class="label">学号筛选：</label>
+              <input id="admin-filter-id" class="input" placeholder="输入学号" autocomplete="off">
+              <label class="label">单元筛选：</label>
+              <select id="admin-filter-unit" class="input select"></select>
+              <button id="btn-filter" class="btn btn-outline">筛选</button>
+              <button id="btn-export" class="btn btn-primary">导出 Excel</button>
+            </div>
+            <div id="admin-records-count" class="muted" style="margin-top:8px;"></div>
+            <div id="admin-records-table-wrap" class="table-wrap" style="margin-top:12px;"></div>
+            <div id="admin-records-empty" class="empty-tip" style="display:none;">暂无答题记录</div>
+          </div>
+
+          <!-- 每题作答详情视图 -->
+          <div class="card" id="admin-detail-card" style="display:none;">
+            <p class="card-title" id="admin-detail-title">每题作答详情</p>
+            <div id="admin-detail-content" class="table-wrap"></div>
+            <div style="margin-top:12px;">
+              <button id="btn-detail-back" class="btn btn-outline">返回记录列表</button>
+            </div>
+          </div>
+
+          <!-- 题库管理功能 -->
           <div class="card">
             <p class="card-title">① 题库模板</p>
             <p class="muted">xlsx 需包含 6 列：题干、选项A、选项B、选项C、选项D、答案。<br>

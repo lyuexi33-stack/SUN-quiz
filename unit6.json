@@ -1,0 +1,37 @@
+{
+  "unit": 6,
+  "title": "第六单元",
+  "updatedAt": "2026-08-31T00:00:00.000Z",
+  "questions": [
+    {
+      "q": "计算机中1字节等于多少位？",
+      "options": [
+        "4位",
+        "8位",
+        "16位",
+        "32位"
+      ],
+      "answer": "B"
+    },
+    {
+      "q": "下列属于操作系统的有",
+      "options": [
+        "Windows",
+        "Photoshop",
+        "Linux",
+        "Excel"
+      ],
+      "answer": "AC"
+    },
+    {
+      "q": "HTTP协议默认端口号是？",
+      "options": [
+        "21",
+        "25",
+        "80",
+        "443"
+      ],
+      "answer": "C"
+    }
+  ]
+}

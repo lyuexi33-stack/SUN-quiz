@@ -1,61 +1,120 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>答题系统</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- 引入 SheetJS 用于解析 xlsx -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>答题系统</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-    <div id="app">
-        <!-- 页面1：登录 -->
-        <div id="page-login" class="page active">
-            <h1>📚 答题系统</h1>
-            <div class="login-form">
-                <input type="text" id="student-id" placeholder="请输入学号" />
-                <input type="text" id="student-name" placeholder="请输入姓名" />
-                <button id="btn-login">进入系统</button>
-                <div id="login-error" class="error-msg"></div>
-            </div>
+  <div id="app">
+
+    <!-- 登录 -->
+    <section id="view-login" class="view">
+      <div class="login-wrap">
+        <div class="logo-mark">答</div>
+        <h1 class="login-title">答题系统</h1>
+        <p class="login-sub">请输入学号和姓名开始作答</p>
+        <div class="field-col">
+          <input id="student-id" class="input" placeholder="学号" autocomplete="off">
+          <input id="student-name" class="input" placeholder="姓名" autocomplete="off">
+        </div>
+        <button id="btn-login" class="btn btn-primary btn-block">进入系统</button>
+        <div id="login-error" class="error"></div>
+      </div>
+    </section>
+
+    <!-- 单元列表 -->
+    <section id="view-units" class="view">
+      <header class="topbar">
+        <div class="brand"><span class="logo-mark small">答</span>答题系统</div>
+        <div class="topbar-right">
+          <span class="user">欢迎，<b id="display-name"></b></span>
+          <button id="btn-logout" class="btn btn-ghost">退出</button>
+        </div>
+      </header>
+      <main class="content">
+        <h1 class="page-title">选择单元</h1>
+        <p class="page-desc">点击单元名称进入对应题库作答</p>
+        <div id="unit-grid" class="unit-grid"></div>
+        <div class="admin-entry">
+          <button id="btn-admin" class="btn btn-ghost">题库管理</button>
+        </div>
+      </main>
+    </section>
+
+    <!-- 答题 -->
+    <section id="view-quiz" class="view">
+      <header class="topbar">
+        <button id="btn-back" class="btn btn-ghost">返回</button>
+        <div class="quiz-title" id="quiz-title"></div>
+        <div class="quiz-progress" id="quiz-progress"></div>
+      </header>
+      <main class="content content-narrow">
+        <div id="quiz-body"></div>
+        <div class="quiz-nav" id="quiz-nav">
+          <button id="btn-prev" class="btn btn-outline">上一题</button>
+          <button id="btn-next" class="btn btn-outline">下一题</button>
+          <button id="btn-submit" class="btn btn-primary">提交答案</button>
+        </div>
+      </main>
+    </section>
+
+    <!-- 题库管理 -->
+    <section id="view-admin" class="view">
+      <header class="topbar">
+        <div class="brand">题库管理</div>
+        <button id="btn-admin-back" class="btn btn-ghost">返回</button>
+      </header>
+      <main class="content content-narrow">
+        <div id="admin-pwd" class="card">
+          <p class="card-title">管理员验证</p>
+          <p class="muted">请输入管理密码进入题库管理（默认 admin2026）</p>
+          <div class="row">
+            <input id="admin-pwd-input" class="input" type="password" placeholder="管理密码" autocomplete="off">
+            <button id="btn-admin-ok" class="btn btn-primary">进入</button>
+          </div>
         </div>
 
-        <!-- 页面2：单元列表 -->
-        <div id="page-units" class="page">
-            <div class="header">
-                <span>欢迎，<span id="display-name"></span>（<span id="display-id"></span>）</span>
-                <button id="btn-logout">退出</button>
-            </div>
-            <h2>选择单元</h2>
-            <div id="unit-list" class="unit-list"></div>
-            <div class="admin-area">
-                <h3>📥 题库管理</h3>
-                <p>上传 .xlsx 文件（格式：题干 | 选项A | 选项B | 选项C | 选项D | 答案）</p>
-                <input type="file" id="file-input" accept=".xlsx" />
-                <button id="btn-import">导入题库</button>
-                <span id="import-status"></span>
-            </div>
-        </div>
+        <div id="admin-body" style="display:none">
+          <div class="card">
+            <p class="card-title">① 题库模板</p>
+            <p class="muted">xlsx 需包含 6 列：题干、选项A、选项B、选项C、选项D、答案。<br>
+              单选答案填一个字母（如 A），多选填多个字母（如 ABD）。</p>
+            <button id="btn-template" class="btn btn-outline">下载题库模板.xlsx</button>
+          </div>
 
-        <!-- 页面3：答题 -->
-        <div id="page-quiz" class="page">
-            <div class="header">
-                <button id="btn-back-units">← 返回单元列表</button>
-                <span id="quiz-title">单元 X</span>
-                <span id="quiz-progress">1/10</span>
+          <div class="card">
+            <p class="card-title">② 导入 xlsx 并生成题库文件</p>
+            <div class="row wrap">
+              <label class="label">目标单元</label>
+              <select id="unit-select" class="input select"></select>
+              <input id="file-input" class="input file" type="file" accept=".xlsx,.xls">
+              <button id="btn-parse" class="btn btn-primary">解析文件</button>
             </div>
-            <div id="question-area"></div>
-            <div id="quiz-result" style="display:none;"></div>
-            <div class="quiz-nav">
-                <button id="btn-prev">上一题</button>
-                <button id="btn-next">下一题</button>
-                <button id="btn-submit">提交答案</button>
-                <button id="btn-show-answers" style="display:none;">查看正确答案</button>
-            </div>
-        </div>
-    </div>
+            <div id="parse-result"></div>
+          </div>
 
-    <script src="script.js"></script>
+          <div class="card" id="preview-card" style="display:none">
+            <p class="card-title">③ 预览与确认</p>
+            <div id="preview-area" class="table-wrap"></div>
+            <button id="btn-download" class="btn btn-primary">下载 unitX.json</button>
+          </div>
+
+          <div class="card">
+            <p class="card-title">④ 更新线上题库</p>
+            <div class="hint">
+              1. 打开 GitHub 仓库 → 进入 data 文件夹 → Add file → Upload files；<br>
+              2. 把下载的 unitX.json 拖进去覆盖同名文件；<br>
+              3. Commit changes，约 1~2 分钟后网站自动生效。
+            </div>
+          </div>
+        </div>
+      </main>
+    </section>
+
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>

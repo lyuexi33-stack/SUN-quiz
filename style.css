@@ -255,6 +255,7 @@ body {
 .btn-ghost:hover { color: var(--brand); background: var(--surface-2); }
 .btn-block { width: 100%; }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
 
 /* ============ 管理后台 ============ */
 .card {
@@ -283,6 +284,26 @@ body {
 table.preview { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.preview th, table.preview td { border: 0.5px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
 table.preview th { background: var(--surface-2); font-weight: 500; white-space: nowrap; }
+
+/* 答题记录表格 */
+table.records-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table.records-table th, table.records-table td {
+  border: 0.5px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+table.records-table th {
+  background: var(--surface-2);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.detail-correct { color: var(--green); font-weight: 500; }
+.detail-wrong { color: var(--red); font-weight: 500; }
 
 .err-list { background: var(--red-bg); border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; color: var(--red); line-height: 1.9; margin-top: 12px; }
 .ok-list { background: var(--green-bg); border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; color: var(--green); line-height: 1.9; margin-top: 12px; }

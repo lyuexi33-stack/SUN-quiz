@@ -2,7 +2,7 @@
 var UNITS = 8;                    // 单元总数，可改
 var UNIT_NAMES = buildUnitNames(UNITS);
 var LETTERS = ['A', 'B', 'C', 'D'];
-var ADMIN_PASSWORD = 'admin2026'; // 管理密码，可改
+var ADMIN_PASSWORD = 'SUN2026'; // 管理密码，可改
 
 var user = null;       // {id, name}
 var unit = 0;          // 当前单元

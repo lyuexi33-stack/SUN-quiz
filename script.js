@@ -24,18 +24,15 @@ function buildUnitNames(n) {
   return arr;
 }
 
-/* ---------- 视图切换（核心：确保登录和单元选择完全分离）---------- */
+/* ---------- 视图切换 ---------- */
 function showView(id) {
-  // 先隐藏所有视图
   document.querySelectorAll('.view').forEach(function (v) {
     v.classList.remove('active');
     v.style.display = 'none';
   });
-  // 再显示目标视图
   var target = document.getElementById(id);
   target.classList.add('active');
   target.style.display = 'block';
-  // 滚动到顶部
   window.scrollTo(0, 0);
 }
 
@@ -76,7 +73,6 @@ $('btn-login').addEventListener('click', function () {
   user = { id: id, name: name };
   localStorage.setItem('sun_student', JSON.stringify(user));
   $('login-error').textContent = '';
-  // 点击进入系统 → 跳转到单元选择界面
   enterUnits();
 });
 
@@ -85,13 +81,11 @@ $('btn-logout').addEventListener('click', function () {
   user = null;
   $('student-id').value = '';
   $('student-name').value = '';
-  // 退出 → 返回登录界面
   showView('view-login');
 });
 
 /* ================= 单元列表 ================= */
 function enterUnits() {
-  // 显示单元选择界面（登录界面自动隐藏）
   showView('view-units');
   $('display-name').textContent = user.name;
   renderUnits();
@@ -143,7 +137,6 @@ function openUnit(u) {
   qIndex = 0;
   answers = [];
   submitted = false;
-  // 显示答题界面（单元选择界面自动隐藏）
   showView('view-quiz');
   $('quiz-title').textContent = UNIT_NAMES[u - 1];
   $('quiz-progress').textContent = '加载中…';
@@ -225,7 +218,7 @@ $('btn-submit').addEventListener('click', function () {
 function doSubmit() {
   submitted = true;
   var correct = 0;
-  var questionDetails = [];  // 每题作答详情
+  var questionDetails = [];
   questions.forEach(function (q, i) {
     var ok = answers[i] === q.answer;
     if (ok) correct++;
@@ -238,7 +231,6 @@ function doSubmit() {
   });
   var total = questions.length;
   var score = Math.round(correct / total * 100);
-  // 保存记录，包含每题作答详情
   saveRecord(user.id, unit, {
     score: score,
     total: total,
@@ -354,7 +346,7 @@ $('btn-admin-ok').addEventListener('click', function () {
     $('admin-body').style.display = '';
     fillUnitSelect();
     fillAdminUnitFilter();
-    loadAllRecords();  // 管理员进入后台自动加载答题记录
+    loadAllRecords();
   } else {
     showToast('密码错误', true);
   }
@@ -384,7 +376,6 @@ function loadAllRecords() {
       try {
         var record = JSON.parse(localStorage.getItem(key));
         var studentName = '';
-        // 尝试从 sun_student 中获取姓名（仅当当前用户匹配时）
         var currentStudent = JSON.parse(localStorage.getItem('sun_student') || 'null');
         if (currentStudent && currentStudent.id === studentId) {
           studentName = currentStudent.name;
@@ -405,7 +396,7 @@ function loadAllRecords() {
             answers: r.answers || null
           });
         });
-      } catch (e) { /* 忽略解析错误 */ }
+      } catch (e) { /* 忽略 */ }
     }
   }
   renderAdminRecords(allRecords);
@@ -443,7 +434,6 @@ function renderAdminRecords(records) {
       '</tr>';
   });
   wrap.innerHTML = '<table class="records-table"><tr><th>学号</th><th>姓名</th><th>单元号</th><th>单元名称</th><th>得分</th><th>总题数</th><th>答对</th><th>答题时间</th><th>每题详情</th><th>操作</th></tr>' + rows + '</table>';
-  // 绑定"查看每题"按钮
   wrap.querySelectorAll('.btn-sm').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var idx = parseInt(this.getAttribute('data-idx'), 10);
@@ -632,7 +622,5 @@ $('btn-download').addEventListener('click', function () {
 
 /* ================= 启动 ================= */
 (function init() {
-  // 始终先显示登录界面，确保登录和单元选择完全分离
   showView('view-login');
-  // 不再自动登录，用户必须手动点击"进入系统"
 })();

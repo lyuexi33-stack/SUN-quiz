@@ -297,6 +297,9 @@ $('btn-records').addEventListener('click', function () {
   viewMyRecords();
 });
 
+// 👇 加上这一行，修复返回按钮
+$('btn-records-back').addEventListener('click', enterUnits);
+
 function viewMyRecords() {
   showView('view-records');
   $('record-student-id').textContent = user.id;

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>答题系统</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- 引入 SheetJS 用于解析 xlsx -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 页面1：登录 -->
+        <div id="page-login" class="page active">
+            <h1>📚 答题系统</h1>
+            <div class="login-form">
+                <input type="text" id="student-id" placeholder="请输入学号" />
+                <input type="text" id="student-name" placeholder="请输入姓名" />
+                <button id="btn-login">进入系统</button>
+                <div id="login-error" class="error-msg"></div>
+            </div>
+        </div>
+
+        <!-- 页面2：单元列表 -->
+        <div id="page-units" class="page">
+            <div class="header">
+                <span>欢迎，<span id="display-name"></span>（<span id="display-id"></span>）</span>
+                <button id="btn-logout">退出</button>
+            </div>
+            <h2>选择单元</h2>
+            <div id="unit-list" class="unit-list"></div>
+            <div class="admin-area">
+                <h3>📥 题库管理</h3>
+                <p>上传 .xlsx 文件（格式：题干 | 选项A | 选项B | 选项C | 选项D | 答案）</p>
+                <input type="file" id="file-input" accept=".xlsx" />
+                <button id="btn-import">导入题库</button>
+                <span id="import-status"></span>
+            </div>
+        </div>
+
+        <!-- 页面3：答题 -->
+        <div id="page-quiz" class="page">
+            <div class="header">
+                <button id="btn-back-units">← 返回单元列表</button>
+                <span id="quiz-title">单元 X</span>
+                <span id="quiz-progress">1/10</span>
+            </div>
+            <div id="question-area"></div>
+            <div id="quiz-result" style="display:none;"></div>
+            <div class="quiz-nav">
+                <button id="btn-prev">上一题</button>
+                <button id="btn-next">下一题</button>
+                <button id="btn-submit">提交答案</button>
+                <button id="btn-show-answers" style="display:none;">查看正确答案</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

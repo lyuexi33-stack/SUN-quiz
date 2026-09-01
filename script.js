@@ -12,6 +12,7 @@ var qIndex = 0;        // 当前题序号
 var answers = [];      // 每题答案
 var submitted = false;
 var parsed = null;     // 后台解析结果
+var allRecords = [];   // 所有答题记录（管理员用）
 
 function buildUnitNames(n) {
   var map = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十',
@@ -101,7 +102,6 @@ function renderUnits() {
   var record = getRecord(user.id);
   var htmlArr = [];
   var jobs = [];
-
   for (var i = 1; i <= UNITS; i++) {
     (function (u) {
       jobs.push(
@@ -126,7 +126,6 @@ function renderUnits() {
       );
     })(i);
   }
-
   Promise.all(jobs).then(function () {
     grid.innerHTML = htmlArr.slice(1).join('');
     grid.querySelectorAll('.unit-card').forEach(function (card) {
@@ -182,7 +181,6 @@ function renderQuestion() {
       '<label class="option"><input type="' + inputType + '" name="opt" value="' + L + '"' + checked + '>' +
       '<span>' + L + '．' + escapeHtml(text) + '</span></label>';
   });
-
   $('quiz-body').innerHTML =
     '<div class="question-card">' +
     '<div class="q-head"><span class="q-no">' + (qIndex + 1) + '.</span>' +
@@ -190,7 +188,6 @@ function renderQuestion() {
     '<span class="q-type q-type-' + type + '">' + (type === 'multi' ? '多选' : '单选') + '</span></div>' +
     '<div class="options">' + opts + '</div>' +
     '</div>';
-
   $('quiz-progress').textContent = (qIndex + 1) + ' / ' + questions.length;
   $('btn-prev').disabled = qIndex === 0;
   $('btn-next').style.display = qIndex === questions.length - 1 ? 'none' : '';
@@ -228,10 +225,27 @@ $('btn-submit').addEventListener('click', function () {
 function doSubmit() {
   submitted = true;
   var correct = 0;
-  questions.forEach(function (q, i) { if (answers[i] === q.answer) correct++; });
+  var questionDetails = [];  // 每题作答详情
+  questions.forEach(function (q, i) {
+    var ok = answers[i] === q.answer;
+    if (ok) correct++;
+    questionDetails.push({
+      question: q.q,
+      yourAnswer: answers[i] || '未作答',
+      correctAnswer: q.answer,
+      isCorrect: ok
+    });
+  });
   var total = questions.length;
   var score = Math.round(correct / total * 100);
-  saveRecord(user.id, unit, { score: score, total: total, correct: correct, time: new Date().toLocaleString('zh-CN') });
+  // 保存记录，包含每题作答详情
+  saveRecord(user.id, unit, {
+    score: score,
+    total: total,
+    correct: correct,
+    time: new Date().toLocaleString('zh-CN'),
+    answers: questionDetails
+  });
   renderResult(correct, total, score);
 }
 
@@ -243,7 +257,6 @@ function renderResult(correct, total, score) {
     '<div class="score-detail">答对 ' + correct + ' / ' + total + ' 题<br>' +
     '答题人：' + escapeHtml(user.name) + '（' + escapeHtml(user.id) + '）</div>' +
     '</div>';
-
   questions.forEach(function (q, i) {
     var ok = answers[i] === q.answer;
     var type = (q.answer || '').length > 1 ? '多选' : '单选';
@@ -269,14 +282,11 @@ function renderResult(correct, total, score) {
       '<div class="review-options">' + opts + '</div>' +
       '</div>';
   });
-
   html += '<div class="quiz-nav"><div class="spacer"></div>' +
     '<button class="btn btn-outline" id="btn-retry">重新作答</button>' +
     '<button class="btn btn-primary" id="btn-back-units">返回单元列表</button></div>';
-
   $('quiz-body').innerHTML = html;
   $('quiz-nav').style.display = 'none';
-
   $('btn-retry').addEventListener('click', function () {
     submitted = false;
     qIndex = 0;
@@ -289,6 +299,45 @@ function renderResult(correct, total, score) {
 }
 
 $('btn-back').addEventListener('click', enterUnits);
+
+/* ================= 我的成绩记录（学生端） ================= */
+$('btn-records').addEventListener('click', function () {
+  viewMyRecords();
+});
+
+function viewMyRecords() {
+  showView('view-records');
+  $('record-student-id').textContent = user.id;
+  $('record-student-name').textContent = user.name;
+  renderMyRecords();
+}
+
+function renderMyRecords() {
+  var record = getRecord(user.id);
+  var wrap = $('records-table-wrap');
+  var empty = $('records-empty');
+  var keys = Object.keys(record).sort();
+  if (!keys.length) {
+    wrap.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+  var rows = '';
+  keys.forEach(function (u) {
+    var r = record[u];
+    var unitName = UNIT_NAMES[parseInt(u) - 1] || '第' + u + '单元';
+    rows += '<tr>' +
+      '<td>' + u + '</td>' +
+      '<td>' + unitName + '</td>' +
+      '<td>' + (r.score || 0) + '</td>' +
+      '<td>' + (r.total || 0) + '</td>' +
+      '<td>' + (r.correct || 0) + '</td>' +
+      '<td>' + (r.time || '') + '</td>' +
+      '</tr>';
+  });
+  wrap.innerHTML = '<table class="records-table"><tr><th>单元号</th><th>单元名称</th><th>得分</th><th>总题数</th><th>答对</th><th>答题时间</th></tr>' + rows + '</table>';
+}
 
 /* ================= 题库管理 ================= */
 $('btn-admin').addEventListener('click', function () {
@@ -304,6 +353,8 @@ $('btn-admin-ok').addEventListener('click', function () {
     $('admin-pwd').style.display = 'none';
     $('admin-body').style.display = '';
     fillUnitSelect();
+    fillAdminUnitFilter();
+    loadAllRecords();  // 管理员进入后台自动加载答题记录
   } else {
     showToast('密码错误', true);
   }
@@ -316,6 +367,164 @@ function fillUnitSelect() {
   sel.innerHTML = html;
 }
 
+function fillAdminUnitFilter() {
+  var sel = $('admin-filter-unit');
+  var html = '<option value="">全部单元</option>';
+  for (var i = 1; i <= UNITS; i++) html += '<option value="' + i + '">' + UNIT_NAMES[i - 1] + '</option>';
+  sel.innerHTML = html;
+}
+
+/* 加载所有答题记录 */
+function loadAllRecords() {
+  allRecords = [];
+  for (var i = 0; i < localStorage.length; i++) {
+    var key = localStorage.key(i);
+    if (key && key.indexOf('sun_record_') === 0) {
+      var studentId = key.replace('sun_record_', '');
+      try {
+        var record = JSON.parse(localStorage.getItem(key));
+        var studentName = '';
+        // 尝试从 sun_student 中获取姓名（仅当当前用户匹配时）
+        var currentStudent = JSON.parse(localStorage.getItem('sun_student') || 'null');
+        if (currentStudent && currentStudent.id === studentId) {
+          studentName = currentStudent.name;
+        }
+        var units = Object.keys(record).sort();
+        units.forEach(function (u) {
+          var r = record[u];
+          var unitName = UNIT_NAMES[parseInt(u) - 1] || '第' + u + '单元';
+          allRecords.push({
+            studentId: studentId,
+            studentName: studentName,
+            unit: parseInt(u),
+            unitName: unitName,
+            score: r.score || 0,
+            total: r.total || 0,
+            correct: r.correct || 0,
+            time: r.time || '',
+            answers: r.answers || null
+          });
+        });
+      } catch (e) { /* 忽略解析错误 */ }
+    }
+  }
+  renderAdminRecords(allRecords);
+}
+
+/* 渲染管理员记录表格 */
+function renderAdminRecords(records) {
+  var wrap = $('admin-records-table-wrap');
+  var empty = $('admin-records-empty');
+  var count = $('admin-records-count');
+  count.textContent = '共 ' + records.length + ' 条记录';
+  if (!records.length) {
+    wrap.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+  var rows = '';
+  records.forEach(function (r, idx) {
+    var detailText = (r.answers && r.answers.length) ?
+      r.answers.map(function (a, i) {
+        return '第' + (i + 1) + '题:' + a.yourAnswer + '/' + a.correctAnswer + '/' + (a.isCorrect ? '正确' : '错误');
+      }).join(' | ') : '未记录';
+    rows += '<tr>' +
+      '<td>' + escapeHtml(r.studentId) + '</td>' +
+      '<td>' + escapeHtml(r.studentName) + '</td>' +
+      '<td>' + r.unit + '</td>' +
+      '<td>' + r.unitName + '</td>' +
+      '<td>' + r.score + '</td>' +
+      '<td>' + r.total + '</td>' +
+      '<td>' + r.correct + '</td>' +
+      '<td>' + r.time + '</td>' +
+      '<td style="max-width:300px;overflow-x:auto;font-size:12px;">' + escapeHtml(detailText) + '</td>' +
+      '<td><button class="btn btn-outline btn-sm" data-idx="' + idx + '">查看每题</button></td>' +
+      '</tr>';
+  });
+  wrap.innerHTML = '<table class="records-table"><tr><th>学号</th><th>姓名</th><th>单元号</th><th>单元名称</th><th>得分</th><th>总题数</th><th>答对</th><th>答题时间</th><th>每题详情</th><th>操作</th></tr>' + rows + '</table>';
+  // 绑定"查看每题"按钮
+  wrap.querySelectorAll('.btn-sm').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var idx = parseInt(this.getAttribute('data-idx'), 10);
+      showQuestionDetails(records[idx]);
+    });
+  });
+}
+
+/* 筛选记录 */
+$('btn-filter').addEventListener('click', function () {
+  var filterId = $('admin-filter-id').value.trim().toLowerCase();
+  var filterUnit = $('admin-filter-unit').value;
+  var filtered = allRecords.filter(function (r) {
+    var matchId = !filterId || r.studentId.toLowerCase().indexOf(filterId) >= 0;
+    var matchUnit = !filterUnit || r.unit === parseInt(filterUnit);
+    return matchId && matchUnit;
+  });
+  renderAdminRecords(filtered);
+});
+
+/* 导出 Excel */
+$('btn-export').addEventListener('click', function () {
+  var filterId = $('admin-filter-id').value.trim().toLowerCase();
+  var filterUnit = $('admin-filter-unit').value;
+  var filtered = allRecords.filter(function (r) {
+    var matchId = !filterId || r.studentId.toLowerCase().indexOf(filterId) >= 0;
+    var matchUnit = !filterUnit || r.unit === parseInt(filterUnit);
+    return matchId && matchUnit;
+  });
+  if (!filtered.length) { showToast('没有可导出的记录', true); return; }
+  var rows = [
+    ['学号', '姓名', '单元号', '单元名称', '得分', '总题数', '答对', '答题时间', '每题详情']
+  ];
+  filtered.forEach(function (r) {
+    var detailText = (r.answers && r.answers.length) ?
+      r.answers.map(function (a, i) {
+        return '第' + (i + 1) + '题:' + a.yourAnswer + '/' + a.correctAnswer + '/' + (a.isCorrect ? '正确' : '错误');
+      }).join(' | ') : '未记录';
+    rows.push([
+      r.studentId, r.studentName, r.unit, r.unitName,
+      r.score, r.total, r.correct, r.time, detailText
+    ]);
+  });
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [14, 10, 8, 12, 8, 8, 8, 20, 80];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '答题记录');
+  XLSX.writeFile(wb, '答题记录.xlsx');
+  showToast('已导出 Excel');
+});
+
+/* 查看每题作答详情 */
+function showQuestionDetails(record) {
+  $('admin-records-card').style.display = 'none';
+  $('admin-detail-card').style.display = '';
+  $('admin-detail-title').textContent = record.studentName + '（' + record.studentId + '）· ' + record.unitName + ' · 每题详情';
+  var content = $('admin-detail-content');
+  if (!record.answers || !record.answers.length) {
+    content.innerHTML = '<div class="empty-tip">该记录未保存每题作答详情</div>';
+    return;
+  }
+  var rows = '';
+  record.answers.forEach(function (a, i) {
+    var cls = a.isCorrect ? 'detail-correct' : 'detail-wrong';
+    rows += '<tr>' +
+      '<td>' + (i + 1) + '</td>' +
+      '<td>' + escapeHtml(a.question) + '</td>' +
+      '<td>' + escapeHtml(a.yourAnswer) + '</td>' +
+      '<td>' + escapeHtml(a.correctAnswer) + '</td>' +
+      '<td class="' + cls + '">' + (a.isCorrect ? '正确' : '错误') + '</td>' +
+      '</tr>';
+  });
+  content.innerHTML = '<table class="records-table"><tr><th>#</th><th>题目</th><th>你的答案</th><th>正确答案</th><th>结果</th></tr>' + rows + '</table>';
+}
+
+$('btn-detail-back').addEventListener('click', function () {
+  $('admin-detail-card').style.display = 'none';
+  $('admin-records-card').style.display = '';
+});
+
+/* ================= 题库模板 ================= */
 $('btn-template').addEventListener('click', function () {
   var rows = [
     ['题干', '选项A', '选项B', '选项C', '选项D', '答案'],
@@ -391,7 +600,6 @@ function renderParseResult() {
   else
     html += '<div class="err-list">没有有效题目，请检查列名（题干、选项A-D、答案）</div>';
   box.innerHTML = html;
-
   if (parsed.questions.length) {
     $('preview-card').style.display = '';
     var rowsHtml = parsed.questions.map(function (q, i) {
